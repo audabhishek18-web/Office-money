@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Office Money Calculator</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,sans-serif;background:#f3f5f7;color:#222}
+  .app{max-width:480px;margin:auto;min-height:100vh;padding:18px}
+  h1{font-size:24px;margin:8px 0 18px}
+  .card{background:#fff;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
+  label{display:block;font-weight:700;margin-bottom:7px}
+  input{width:100%;padding:14px;border:1px solid #ddd;border-radius:12px;font-size:18px;outline:none}
+  input:focus{border-color:#555}
+  button{width:100%;padding:14px;border:0;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer;margin-top:10px}
+  .add{background:#222;color:#fff}
+  .clear{background:#eee;color:#222}
+  .balance{font-size:36px;font-weight:800;margin-top:6px}
+  .row{display:flex;justify-content:space-between;margin:10px 0;font-size:16px}
+  .history{max-height:300px;overflow:auto}
+  .item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee}
+  .in{color:#16803c}.out{color:#c0392b}
+  small{color:#777}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>💼 Office Money Calculator</h1>
+
+  <div class="card">
+    <label>💰 Sir se paise aaye</label>
+    <input id="received" type="number" inputmode="decimal" placeholder="₹ 0">
+    <label style="margin-top:14px">💸 Office ka kharcha</label>
+    <input id="expense" type="number" inputmode="decimal" placeholder="₹ 0">
+    <label style="margin-top:14px">📝 Details</label>
+    <input id="details" type="text" placeholder="Jaise: Petrol / Printing">
+    <button class="add" onclick="addEntry()">Add Entry</button>
+  </div>
+
+  <div class="card">
+    <small>Current Office Balance</small>
+    <div class="balance">₹ <span id="balance">0</span></div>
+    <div class="row"><span>Total Received</span><b>₹ <span id="totalIn">0</span></b></div>
+    <div class="row"><span>Total Expenses</span><b>₹ <span id="totalOut">0</span></b></div>
+  </div>
+
+  <div class="card">
+    <b>📋 Recent Entries</b>
+    <div id="history" class="history"><small style="display:block;margin-top:12px">Abhi koi entry nahi hai.</small></div>
+    <button class="clear" onclick="clearAll()">Clear All Data</button>
+  </div>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem('officeMoneyData') || '[]');
+
+function money(n){ return Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2}); }
+
+function save(){ localStorage.setItem('officeMoneyData', JSON.stringify(data)); render(); }
+
+function addEntry(){
+  const r = parseFloat(document.getElementById('received').value)||0;
+  const e = parseFloat(document.getElementById('expense').value)||0;
+  const d = document.getElementById('details').value.trim() || 'Office expense';
+  if(r===0 && e===0){ alert('Amount enter karein.'); return; }
+  data.push({date:new Date().toLocaleString('en-IN'), received:r, expense:e, details:d});
+  document.getElementById('received').value='';
+  document.getElementById('expense').value='';
+  document.getElementById('details').value='';
+  save();
+}
+
+function render(){
+  let tin=0,tout=0;
+  data.forEach(x=>{tin+=x.received;tout+=x.expense});
+  document.getElementById('totalIn').textContent=money(tin);
+  document.getElementById('totalOut').textContent=money(tout);
+  document.getElementById('balance').textContent=money(tin-tout);
+
+  const h=document.getElementById('history');
+  if(!data.length){h.innerHTML='<small style="display:block;margin-top:12px">Abhi koi entry nahi hai.</small>';return;}
+  h.innerHTML=data.slice().reverse().map(x=>{
+    const parts=[];
+    if(x.received) parts.push(`<span class="in">+₹${money(x.received)}</span>`);
+    if(x.expense) parts.push(`<span class="out">-₹${money(x.expense)}</span>`);
+    return `<div class="item"><div><b>${x.details}</b><br><small>${x.date}</small></div><div>${parts.join('<br>')}</div></div>`;
+  }).join('');
+}
+function clearAll(){
+  if(confirm('Saara office data delete karna hai?')){data=[];save();}
+}
+render();
+</script>
+</body>
+</html>
